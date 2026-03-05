@@ -32,7 +32,7 @@ This portfolio is more than just a personal website - it's a carefully crafted d
 The portfolio serves as both a personal showcase and a testament to modern web development capabilities, featuring smooth animations, engaging interactions, and a cohesive visual identity throughout.
 
 ## 🚀 Live Demo
-🌐 [View Live Portfolio](https://web-development-portfolio-blond.vercel.app/)
+🌐 not yet ready
 
 Experience the portfolio in its full glory with all animations and interactions. The live version is deployed on Vercel with global CDN distribution for optimal performance worldwide.
 
@@ -345,16 +345,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Project Author
 **Alamin Muhammad**
-- Portfolio: [prashantkoirala.info.np](https://prashantkoirala.info.np)
-- Email: prashantkoirala465@gmail.com
-- GitHub: [@prashantkoirala465](https://github.com/prashantkoirala465)
-- LinkedIn: [Alamin Muhammad](https://linkedin.com/in/prashantkoirala)
-- Twitter: [@arkynox_](https://twitter.com/arkynox_)
-
-### Support Channels
-- **Issues**: [GitHub Issues](https://github.com/prashantkoirala465/portfolio/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/prashantkoirala465/portfolio/discussions)
-- **Email**: Direct email for urgent inquiries
+- Portfolio: 
+- Email: alaminmuhammad08081811102@gmail.com 
+- GitHub: 
+- LinkedIn: [Alamin Muhammad]
+- Twitter: 
 
 ### Professional Services
 Available for:
