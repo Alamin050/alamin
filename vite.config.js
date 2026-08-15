@@ -15,6 +15,7 @@ export default defineConfig({
       "**/*.png",
       "**/*.svg",
       "**/*.gif",
+      "**/*.webp",
     ],
     copyPublicDir: true,
   },
