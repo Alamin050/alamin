@@ -10,7 +10,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  will-change: opacity;
+  will-change: transform, opacity;
 }
 
 #hero-bust-canvas {

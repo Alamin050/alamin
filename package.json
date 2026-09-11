@@ -10,7 +10,7 @@
       "host": "vite --host"
     },
     "keywords": [],
-    "author": "Alamin Muhammad",
+    "author": "Alamin Muhammad Mustapha",
     "license": "MIT",
     "dependencies": {
       "gsap": "^3.13.0",

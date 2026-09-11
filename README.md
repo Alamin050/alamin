@@ -120,7 +120,7 @@ portfolio/
 ### Local Development Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/prashantkoirala465/portfolio.git
+   git clone https://github.com/Alamin050/portfolio.git
    ```
 
 2. Install dependencies:
@@ -344,12 +344,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 ### Project Author
-**Alamin Muhammad**
-- Portfolio: 
+**Alamin Muhammad Mustapha**
+- Portfolio: https://github.com/Alamin050
 - Email: alaminmuhammad08081811102@gmail.com 
-- GitHub: 
-- LinkedIn: [Alamin Muhammad]
-- Twitter: 
+- Phone: +234 8081811102
+- GitHub: https://github.com/Alamin050
+- LinkedIn: https://www.linkedin.com/in/alamin-muhammad-7b3698263/
+- Twitter / X: https://x.com/alaminspeax
+- Resume: https://drive.google.com/file/d/1jsfunKRuTbhLM5vamL4BnUQFgGoEfUqq/view?usp=sharing
 
 ### Professional Services
 Available for:

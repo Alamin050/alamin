@@ -3,11 +3,11 @@
   position: relative;
   width: 100vw;
   height: 100svh;
-  padding: 8em 2em 6em 2em;
+  padding: 8em 4vw 6em 6vw;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   background-color: transparent;
   color: var(--fg);
   overflow: hidden;
@@ -17,19 +17,22 @@
 .about-hero .about-hero-header {
   position: relative;
   z-index: 2;
-  text-align: center;
+  text-align: left;
+  max-width: 50vw;
 }
 
 .about-hero .about-hero-header h1 {
-  font-size: 7.5rem;
+  font-size: clamp(4.5rem, 6.5vw, 7.5rem);
 }
 
 .about-hero .about-hero-portrait {
   position: absolute;
-  top: 55%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(10deg);
-  width: 15%;
+  top: 50%;
+  left: 36%;
+  transform: translate(-50%, -50%) rotate(8deg);
+  width: 13%;
+  min-width: 150px;
+  max-width: 220px;
   aspect-ratio: 5/7;
   border-radius: 1em;
   overflow: hidden;
@@ -41,11 +44,17 @@
 .about-hero .about-hero-bio {
   position: relative;
   z-index: 2;
-  text-align: center;
-  width: 50%;
+  text-align: left;
+  align-items: flex-start;
+  width: 46%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
   gap: 2em;
+}
+
+.about-hero .about-hero-bio p.ss {
+  line-height: 1.25;
 }
 
 /* about - about copy */
@@ -188,6 +197,12 @@
 @media (max-width: 1000px) {
   .about-hero {
     padding: 8em 2em 4em 2em;
+    align-items: center;
+  }
+
+  .about-hero .about-hero-header {
+    text-align: center;
+    max-width: 100%;
   }
 
   .about-hero .about-hero-header h1 {
@@ -196,10 +211,16 @@
 
   .about-hero .about-hero-bio {
     width: 100%;
+    max-width: 100%;
+    text-align: center;
+    align-items: center;
   }
 
   .about-hero .about-hero-portrait {
-    width: 25%;
+    width: 28%;
+    min-width: unset;
+    max-width: unset;
+    left: 50%;
     top: 50%;
     transform: translate(-50%, -50%) rotate(0deg);
   }

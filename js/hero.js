@@ -29,7 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let scrubTween = null;
   let scrubScrollTrigger = null;
-  let fadeScrollTrigger = null;
+  let exitTween = null;
+  let exitScrollTrigger = null;
 
   // Frame URL builder for sequential WebP assets
   const getFrameUrl = (index) => {
@@ -135,11 +136,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // Initialize ScrollTrigger scrub and fade animations
+  // Initialize ScrollTrigger scrub and exit animations
   const initScrollTriggers = () => {
     if (scrubScrollTrigger) scrubScrollTrigger.kill();
     if (scrubTween) scrubTween.kill();
-    if (fadeScrollTrigger) fadeScrollTrigger.kill();
+    if (exitScrollTrigger) exitScrollTrigger.kill();
+    if (exitTween) exitTween.kill();
+
+    gsap.set(canvasContainer, {
+      clearProps: "transform,opacity,visibility",
+    });
+    canvasContainer.style.opacity = "1";
+    canvasContainer.style.visibility = "visible";
 
     const heroEl = document.querySelector(".hero");
     const aboutEl = document.querySelector(".about-hero");
@@ -150,15 +158,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const frameObj = { frame: 0 };
 
     // 1. Bust scrub animation: Head turns from straight (0) to left-tilted (120)
+    // Synchronized freely across the scroll distance from top of Hero to top of About (no pinning)
     scrubTween = gsap.to(frameObj, {
       frame: TOTAL_FRAMES - 1,
       ease: "none",
       scrollTrigger: {
-        trigger: ".hero",
+        trigger: heroEl,
         start: "top top",
-        end: "+=120%",
-        pin: true,
-        scrub: 0.8,
+        endTrigger: aboutEl || heroEl,
+        end: aboutEl ? "top top" : "bottom top",
+        scrub: 0.5,
         onUpdate: () => {
           currentFrameIndex = frameObj.frame;
           renderFrame(frameObj.frame);
@@ -167,28 +176,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     scrubScrollTrigger = scrubTween.scrollTrigger;
 
-    // 2. Fade-out animation through About section before Featured Projects
-    if (aboutEl) {
-      fadeScrollTrigger = ScrollTrigger.create({
-        trigger: ".about-hero",
-        start: "top bottom",
-        endTrigger: featuredEl || ".about-hero",
-        end: featuredEl ? "top 85%" : "bottom top",
-        scrub: 0.5,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          // Smooth power1.out ease dissolution
-          const easeOutProgress = gsap.parseEase("power1.out")(progress);
-          const opacity = Math.max(0, Math.min(1, 1 - easeOutProgress));
-
-          canvasContainer.style.opacity = opacity;
-          if (opacity <= 0.001) {
-            canvasContainer.style.visibility = "hidden";
-          } else {
-            canvasContainer.style.visibility = "visible";
-          }
+    // 2. Cinematic exit animation: Moves right, scales down slightly, and fades out
+    // Starts the moment About begins scrolling away / Featured Projects starts entering the viewport
+    if (featuredEl || aboutEl) {
+      exitTween = gsap.to(canvasContainer, {
+        opacity: 0,
+        x: "15vw",
+        scale: 0.85,
+        ease: "power2.inOut",
+        scrollTrigger: {
+          trigger: featuredEl || aboutEl,
+          start: featuredEl ? "top bottom" : "top top",
+          end: featuredEl ? "top top" : "bottom top",
+          scrub: 0.5,
+          onUpdate: (self) => {
+            if (self.progress >= 0.999) {
+              canvasContainer.style.visibility = "hidden";
+            } else {
+              canvasContainer.style.visibility = "visible";
+            }
+          },
         },
       });
+      exitScrollTrigger = exitTween.scrollTrigger;
     }
   };
 

@@ -1,70 +1,42 @@
-# Prompt for AI Visual Editor
+# Follow-up Prompt: Fix About-Hero Layout Overlap + Exit Trigger Timing
 
-Replace the existing "featured works" background element in the Hero section with a scroll-scrubbed image-sequence animation of a marble bust, using GSAP ScrollTrigger and Lenis. Follow the spec below exactly.
+Two more fixes needed on top of the existing marble bust scroll implementation.
 
 ---
 
-## 1. Goal
+## Issue 1: About-hero text content overlaps the marble bust — needs to shift left
 
-In the Hero section, there is currently a "featured works" element positioned behind the Name/heading, with some kind of scroll trigger already attached to it. Remove/replace that element entirely with a canvas-rendered WebP image sequence of a marble bust. As the user scrolls down from the top of the page, the bust animation scrubs forward frame-by-frame (head starts facing straight, gradually tilts and moves to the left side of the screen). The animation should feel tied directly to scroll position (scrubbing, not autoplay), and should smoothly fade out by the time the About section (which comes right after the Hero) transitions into the Featured Projects section — so it never visually collides with Featured Projects content.
+**Current (buggy) behavior:** In the About-hero section (see attached screenshot), the bust is resting in its final tilted pose on the right side of the screen, but the About content (heading "HI, I'M ALAMIN", the profile photo, the bio paragraph, and the "CODE / DESIGN / CRAFT / REPEAT" line) is positioned such that it overlaps/collides with the bust — the bio text runs underneath/behind the bust's jaw and neck, and the profile photo sits right against the bust's face, both partially obscured/crowded.
 
-## 2. Assets
+**Desired behavior:** Shift the entire About-hero content block (heading, profile photo, bio paragraph, tagline) further to the left so it sits cleanly clear of the bust's final resting position, with no text or image overlapping the bust. There should be clean visual separation between the two — the bust occupies the right portion of the viewport, the text content occupies the left portion, with a comfortable gap between them.
 
-- 121 WebP frames, transparent backgrounds, located in `final_clean_frames/`.
-- Frames are sequential and represent a continuous motion: frame 1 = head facing straight, frame 121 = head tilted, moved to the left side of the frame.
-- Frames are named sequentially (e.g. `frame_0001.webp` → `frame_0121.webp`).
-- Frames are WebP with alpha transparency — load them via standard `Image()`/`new Image()` objects same as you would PNGs (all modern browsers decode WebP natively via `drawImage`, no extra library needed). No conversion step required.
+**Implementation notes:**
+- Locate the About-hero section's content container and adjust its layout (reduce its width/max-width, add `padding-right` or `margin-right`, or shift it via flexbox/grid column allocation) so it's constrained to the left ~50-55% of the viewport instead of centering/spanning wide enough to reach where the bust sits.
+- Check the bio paragraph specifically — right now it appears to span nearly the full width and run under the bust; it should wrap within the narrower left-aligned column instead.
+- Verify this doesn't break the layout at the point where the bust hasn't fully appeared yet (earlier in the Hero section) — this shift should apply specifically to the About-hero section's content, not accidentally affect the Hero section above it, unless the same content also currently appears there and needs the same treatment.
+- Confirm responsiveness — on smaller viewports where there may not be room for a stacked bust + left-aligned text, check whether the bust is hidden/adjusted already (per earlier responsiveness notes) and make sure the text reflows to full width in that case rather than staying artificially narrow.
 
-## 3. Rendering approach
+---
 
-- Use a `<canvas>` element (not swapping `<img>` src per frame — too much layout thrashing/repaint cost for 121 frames scrubbed on scroll).
-- Canvas should be absolutely/fixed positioned in front the Name/heading text in the Hero section (similar to how the featured work element is placed), sized to fill the hero viewport (or a defined bounding box matching where "featured works" currently sits), with `object-fit: contain`-style scaling logic drawn manually via canvas math (preserve aspect ratio, center appropriately, account for the head moving toward the left of the frame so it doesn't get cropped).
-- Draw the current frame's WebP image onto the canvas using `drawImage`, clearing the canvas each time before redraw.
-- Respect device pixel ratio (scale canvas backing store by `window.devicePixelRatio` for crispness on retina).
+## Issue 2: Bust's disappearing sequence (fade + shrink + translate) starts too late, causing overlap with Featured Projects section
 
-## 4. Preloading
+**Current (buggy) behavior:** After the About-hero section reaches its resting state (bust fully tilted, About content visible), scrolling further causes the About section to scroll up and away — but the bust does NOT begin its exit animation (fade/shrink/translate-right) until the About section is almost completely scrolled past. This means the Featured Projects section starts appearing on screen *before* the bust has started disappearing, so for a stretch of scroll, the bust is still fully visible while Featured Projects content is already overlapping/appearing behind or alongside it — looking broken.
 
-- Preload all 121 WebP images into an array of `Image` objects before enabling scroll-scrub, so scrubbing never shows a blank/flash frame.
-- Show a lightweight loading state (or just delay activating the ScrollTrigger) until all images are loaded, or at minimum until frame 1 is loaded and the rest load progressively in the background — prioritize no jank over instant load.
-- Cache loaded images so this doesn't re-fetch on re-renders.
+**Desired behavior:** The bust's exit sequence (opacity fade, rightward translate, scale-down — all three together, as already implemented) should begin the moment the About-hero section starts scrolling away / Featured Projects starts entering the viewport — not later. In other words, the exit animation and the About→Featured-Projects section transition should be in sync and start together, so the bust is actively disappearing during the same scroll range that Featured Projects is arriving, and should be fully gone (opacity 0) by the time Featured Projects is settled/fully in view.
 
-## 5. Scroll-driven animation (GSAP + Lenis)
+**Implementation notes:**
+- This is a ScrollTrigger start-point timing fix on the existing exit timeline (the one built for the previous fade/translate/scale fix).
+- Move the `start` value earlier. Currently it's likely set to something like `start: 'bottom bottom'` or `start: 'bottom center'` on the About section (triggering only once About has almost fully scrolled past) — change this to trigger right as the About section begins leaving the viewport / Featured Projects begins entering, e.g. `start: 'bottom top'` on the About section, or `start: 'top bottom'` on the Featured Projects section itself (pick whichever anchor is more reliable given the current DOM/section structure — inspect and adjust).
+- Keep the `end` point as-is (or verify it still lines up) so the full exit — fade, shrink, translate — completes right as Featured Projects is fully settled in view, giving a longer, smoother exit runway rather than a rushed one.
+- Re-verify `scrub` is still tightly tied to scroll (no jump/pop when the trigger point changes) and that reversing scroll (scrolling back up from Featured Projects into About) smoothly brings the bust back in sync with the section transition reversing.
+- Double check there's no dead zone or overlap between the end of the frame-scrub ScrollTrigger (Hero → About, from the earlier fix) and the start of this exit ScrollTrigger — the bust should hold its fully-tilted resting pose calmly through the middle of the About section, then transition into the exit only as About starts leaving, with no gap or premature trigger in between.
 
-- Use GSAP's `ScrollTrigger` plugin to drive playback, with `scrub: true` (or a small numeric value like `0.5`–`1` for slight smoothing lag) so the frame index is tightly coupled to scroll position — no easing/inertia beyond what scrub smoothing naturally gives.
-- Ensure Lenis and ScrollTrigger are properly synced: Lenis should drive the scroll, and ScrollTrigger should update on Lenis's `scroll` event (via `lenis.on('scroll', ScrollTrigger.update)`), with `lagSmoothing` disabled on GSAP's ticker or Lenis driving the RAF loop — set this up so ScrollTrigger positions stay accurate and don't desync from Lenis's virtual scroll. If Lenis + ScrollTrigger integration isn't already wired up elsewhere in the codebase, wire it up here using GSAP's ticker (`gsap.ticker.add`) to drive `lenis.raf()`.
-- Use a single GSAP tween on a plain JS object (e.g. `{ frame: 0 }`) tweened from `0` to `120`, with `onUpdate` rounding the value and redrawing the canvas with `frames[Math.round(obj.frame)]`.
-- The ScrollTrigger's `trigger` should be the Hero section itself, with:
-  - `start: 'top top'`
-  - `end` calculated so the scrub completes as the user scrolls through the Hero section into the start of the About section (tune this — likely `end: 'bottom top'` on the Hero, or a defined pixel/viewport-height range — pick whichever produces a natural pace, not too fast/rushed, not stalled).
-  - `pin: true` on the Hero (or on the canvas/bust wrapper specifically) is optional — decide based on whether the Name/heading should also stay pinned during the scrub or scroll normally over it. Default assumption: pin the Hero section so the bust animation fully plays out before the page continues scrolling, then unpin and continue into About.
+---
 
-## 6. Fade-out behavior
+## Acceptance criteria
 
-- Add a second ScrollTrigger (or extend the fade into the same timeline) that fades the canvas's opacity from `1` to `0` as the user scrolls through the About section, completing the fade before the Featured Projects section enters the viewport — so there's no overlap/flash between the bust fading and Featured Projects appearing.
-- This should feel like a smooth, seamless dissolve, not an abrupt cutoff — use `ease: 'power1.out'` or similar on the opacity tween, scrubbed to scroll (not a fixed-duration animation).
-- Once fully faded out, set canvas to `pointer-events: none` and consider `display: none` or unmounting the RAF/draw loop entirely to save perf on the rest of the page.
-
-## 7. Replacing existing code
-
-- Locate the current "featured works" element behind the Name in the Hero section, along with whatever scroll trigger logic is currently attached to it.
-- Remove that element and its associated scroll-trigger code cleanly (don't leave dead imports, unused refs, or orphaned CSS).
-- Replace it with the new canvas + GSAP ScrollTrigger + Lenis-driven bust sequence, in the same DOM position/z-index layer (behind the Name/heading, in front of the Hero background).
-
-## 8. Performance & cleanup
-
-- Kill/revert the ScrollTrigger instance(s) and cancel any RAF loops on component unmount to avoid memory leaks (especially important if this is a React/Vue/etc. component-based codebase — use the appropriate lifecycle/cleanup hook).
-- Throttle canvas redraws to only happen on actual frame-index change (don't redraw every scroll event tick if the rounded frame index hasn't changed).
-- Ensure this doesn't block scroll performance — profile if possible, and use `will-change: opacity` sparingly on the canvas.
-
-## 9. Responsiveness
-
-- On resize, recalculate canvas dimensions and redraw the current frame (don't just stretch/distort).
-- On smaller viewports (mobile), consider whether the full 121-frame scrub is desirable or whether a reduced/faster scrub range makes more sense given shorter viewport scroll distances — use your judgment, but keep the head from being cropped when it moves left.
-
-## 10. Acceptance criteria
-
-- Scrolling down from the very top smoothly scrubs the bust from straight-facing to left-tilted/left-positioned, tightly following scroll position (via Lenis + GSAP ScrollTrigger, scrubbed).
-- No flash of missing frames, no layout jank.
-- By the time Featured Projects enters the viewport, the bust has fully and smoothly faded out.
-- Scrolling back up reverses the scrub correctly (since it's scrubbed, not just played once).
-- Old "featured works" element and its scroll logic are fully removed with no leftover dead code.
+- About-hero text content (heading, photo, bio, tagline) is fully clear of the bust with no overlapping text/image elements.
+- As soon as the About section starts scrolling away and Featured Projects starts entering, the bust visibly begins fading, shrinking, and moving right — in sync, not delayed.
+- At no point is Featured Projects content visible on screen at the same time the bust is still at full opacity/size — the exit should already be underway before Featured Projects arrives.
+- The bust is fully gone (opacity 0, no longer interactable/rendered) by the time Featured Projects is fully settled in the viewport.
+- Scrolling back up reverses both fixes correctly: text stays left-aligned/clear of the bust throughout, and the bust reappears in sync as Featured Projects scrolls back out and About scrolls back into view.
