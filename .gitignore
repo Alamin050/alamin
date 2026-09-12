@@ -1,3 +1,7 @@
 venv/
 input_frames/
+<<<<<<< HEAD
 output_frames/
+=======
+output_frames/
+>>>>>>> b84dabf (Chore: track heavy frames)
