@@ -13,6 +13,8 @@
   will-change: transform, opacity;
 }
 
+
+
 #hero-bust-canvas {
   width: 100%;
   height: 100%;
@@ -46,7 +48,7 @@
 
 .hero .hero-header.hero-header-2 {
   position: relative;
-  transform: translateX(10%);
+  transform: translateX(4.5%);
   z-index: 2;
 }
 
