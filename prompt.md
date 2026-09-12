@@ -1,42 +1,27 @@
-# Follow-up Prompt: Fix About-Hero Layout Overlap + Exit Trigger Timing
+# Follow-up Prompt: Fix Z-Index Stacking So Bust Fades On Top Of Featured Projects, Not Behind It
 
-Two more fixes needed on top of the existing marble bust scroll implementation.
+## Issue: Bust appears to get "covered"/clipped by the rising Featured Projects section instead of dissolving smoothly on top of it
 
----
+**Current (buggy) behavior:** As the user scrolls and Featured Projects rises into view, the Featured Projects section is stacked visually in front of (on top of) the bust. This means as the section rises up the screen, it looks like it's physically covering/cutting off the bust from the bottom up — like a curtain sliding over it — rather than the bust smoothly fading away independently. It reads as broken/unpolished because the bust's disappearance looks caused by occlusion, not by its own fade/shrink/translate animation.
 
-## Issue 1: About-hero text content overlaps the marble bust — needs to shift left
+**Desired behavior:** The bust should remain visually layered *above* the Featured Projects section throughout its entire exit sequence (fade + shrink + translate-right, from the earlier fix), so that as Featured Projects rises up and settles into the viewport, the bust is seen dissolving/receding *over* it — never clipped or occluded by the incoming section's edge. The bust's own opacity fade should be what makes it disappear, not the Featured Projects section sliding over/in front of it. By the time Featured Projects fully occupies the viewport, the bust's exit animation should also be fully complete (opacity 0), so there's no visible overlap needed at all by that point — but during the transition itself, the bust needs to render on top.
 
-**Current (buggy) behavior:** In the About-hero section (see attached screenshot), the bust is resting in its final tilted pose on the right side of the screen, but the About content (heading "HI, I'M ALAMIN", the profile photo, the bio paragraph, and the "CODE / DESIGN / CRAFT / REPEAT" line) is positioned such that it overlaps/collides with the bust — the bio text runs underneath/behind the bust's jaw and neck, and the profile photo sits right against the bust's face, both partially obscured/crowded.
+## Root cause
 
-**Desired behavior:** Shift the entire About-hero content block (heading, profile photo, bio paragraph, tagline) further to the left so it sits cleanly clear of the bust's final resting position, with no text or image overlapping the bust. There should be clean visual separation between the two — the bust occupies the right portion of the viewport, the text content occupies the left portion, with a comfortable gap between them.
+This is a stacking-context / `z-index` issue, not a timing issue (timing was already fixed in the previous round). The bust's container/canvas currently has a lower stacking order than the Featured Projects section, so as Featured Projects' box enters the viewport and overlaps the bust's screen position, it paints over the bust rather than under it.
 
-**Implementation notes:**
-- Locate the About-hero section's content container and adjust its layout (reduce its width/max-width, add `padding-right` or `margin-right`, or shift it via flexbox/grid column allocation) so it's constrained to the left ~50-55% of the viewport instead of centering/spanning wide enough to reach where the bust sits.
-- Check the bio paragraph specifically — right now it appears to span nearly the full width and run under the bust; it should wrap within the narrower left-aligned column instead.
-- Verify this doesn't break the layout at the point where the bust hasn't fully appeared yet (earlier in the Hero section) — this shift should apply specifically to the About-hero section's content, not accidentally affect the Hero section above it, unless the same content also currently appears there and needs the same treatment.
-- Confirm responsiveness — on smaller viewports where there may not be room for a stacked bust + left-aligned text, check whether the bust is hidden/adjusted already (per earlier responsiveness notes) and make sure the text reflows to full width in that case rather than staying artificially narrow.
+## Implementation notes
 
----
-
-## Issue 2: Bust's disappearing sequence (fade + shrink + translate) starts too late, causing overlap with Featured Projects section
-
-**Current (buggy) behavior:** After the About-hero section reaches its resting state (bust fully tilted, About content visible), scrolling further causes the About section to scroll up and away — but the bust does NOT begin its exit animation (fade/shrink/translate-right) until the About section is almost completely scrolled past. This means the Featured Projects section starts appearing on screen *before* the bust has started disappearing, so for a stretch of scroll, the bust is still fully visible while Featured Projects content is already overlapping/appearing behind or alongside it — looking broken.
-
-**Desired behavior:** The bust's exit sequence (opacity fade, rightward translate, scale-down — all three together, as already implemented) should begin the moment the About-hero section starts scrolling away / Featured Projects starts entering the viewport — not later. In other words, the exit animation and the About→Featured-Projects section transition should be in sync and start together, so the bust is actively disappearing during the same scroll range that Featured Projects is arriving, and should be fully gone (opacity 0) by the time Featured Projects is settled/fully in view.
-
-**Implementation notes:**
-- This is a ScrollTrigger start-point timing fix on the existing exit timeline (the one built for the previous fade/translate/scale fix).
-- Move the `start` value earlier. Currently it's likely set to something like `start: 'bottom bottom'` or `start: 'bottom center'` on the About section (triggering only once About has almost fully scrolled past) — change this to trigger right as the About section begins leaving the viewport / Featured Projects begins entering, e.g. `start: 'bottom top'` on the About section, or `start: 'top bottom'` on the Featured Projects section itself (pick whichever anchor is more reliable given the current DOM/section structure — inspect and adjust).
-- Keep the `end` point as-is (or verify it still lines up) so the full exit — fade, shrink, translate — completes right as Featured Projects is fully settled in view, giving a longer, smoother exit runway rather than a rushed one.
-- Re-verify `scrub` is still tightly tied to scroll (no jump/pop when the trigger point changes) and that reversing scroll (scrolling back up from Featured Projects into About) smoothly brings the bust back in sync with the section transition reversing.
-- Double check there's no dead zone or overlap between the end of the frame-scrub ScrollTrigger (Hero → About, from the earlier fix) and the start of this exit ScrollTrigger — the bust should hold its fully-tilted resting pose calmly through the middle of the About section, then transition into the exit only as About starts leaving, with no gap or premature trigger in between.
-
----
+- Give the bust's canvas/wrapper element a `z-index` higher than the Featured Projects section specifically during the point in the scroll where they visually overlap (i.e. from when the exit animation begins to when it completes). This likely just means setting a permanently higher `z-index` on the bust's fixed/sticky container than Featured Projects' stacking context — confirm both elements' current `position` and `z-index` values and adjust so the bust's stacking context wins for as long as it's mounted/visible.
+- Make sure the bust's container still has `pointer-events: none` (or scoped appropriately) so that even though it's rendered on top, it doesn't block clicks/interactions on the Featured Projects content underneath it while both are visible during the transition.
+- Confirm this doesn't accidentally place the bust above other UI that should always stay on top regardless (e.g. navbar, menu button, any modal/overlay) — the bust should only need to outrank the Featured Projects section's stacking context, not everything on the page. Check the existing z-index scale/convention in the codebase (if one exists, e.g. CSS variables like `--z-navbar`, `--z-hero`, `--z-overlay`) and slot the bust in appropriately rather than using an arbitrary large number that could unintentionally cover other elements later.
+- Since the bust is likely `position: fixed` at this point (per earlier fixes), verify it's not accidentally trapped inside a lower stacking context created by a parent element with its own `transform`, `opacity`, or `will-change` property (any of these on an ancestor creates a new stacking context that can trap `z-index: fixed` children below sibling sections regardless of the z-index value set). If such a parent exists, either adjust the bust's DOM placement (mount it at a higher level, e.g. directly under the root/body rather than nested inside a section wrapper) or remove the stacking-context-creating property from the ancestor if it's not otherwise needed.
+- Once the exit animation fully completes (opacity reaches 0), the earlier cleanup (setting `pointer-events: none`, halting redraws, and — if applicable — `display: none`/unmounting) should still apply so the now-invisible-but-still-technically-on-top element doesn't linger as a dead layer above Featured Projects afterward.
 
 ## Acceptance criteria
 
-- About-hero text content (heading, photo, bio, tagline) is fully clear of the bust with no overlapping text/image elements.
-- As soon as the About section starts scrolling away and Featured Projects starts entering, the bust visibly begins fading, shrinking, and moving right — in sync, not delayed.
-- At no point is Featured Projects content visible on screen at the same time the bust is still at full opacity/size — the exit should already be underway before Featured Projects arrives.
-- The bust is fully gone (opacity 0, no longer interactable/rendered) by the time Featured Projects is fully settled in the viewport.
-- Scrolling back up reverses both fixes correctly: text stays left-aligned/clear of the bust throughout, and the bust reappears in sync as Featured Projects scrolls back out and About scrolls back into view.
+- While scrolling through the transition from About → Featured Projects, the bust is never visually clipped/cut off by the Featured Projects section's edge rising over it — it stays fully rendered on top throughout its own fade/shrink/translate exit.
+- The bust's disappearance reads as its own animation (fading/shrinking/moving away) rather than looking like it's being physically covered by an incoming panel.
+- By the time Featured Projects fully fills the viewport, the bust has completed its exit (opacity 0) and is no longer rendered/interactable, with no leftover invisible layer sitting above Featured Projects' content.
+- No regressions: navbar, menu button, and any other always-on-top UI still render above the bust as expected; Featured Projects content remains fully clickable/interactive during and after the transition despite the bust rendering above it mid-transition.
+- Scrolling back up still reverses correctly, with the bust reappearing on top of Featured Projects as it did going forward, without any clipping in reverse either.

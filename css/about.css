@@ -3,7 +3,7 @@
   position: relative;
   width: 100vw;
   height: 100svh;
-  padding: 8em 4vw 6em 6vw;
+  padding: 8em 4vw 3em 6vw;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -28,7 +28,7 @@
 .about-hero .about-hero-portrait {
   position: absolute;
   top: 50%;
-  left: 36%;
+  left: 17%;
   transform: translate(-50%, -50%) rotate(8deg);
   width: 13%;
   min-width: 150px;
